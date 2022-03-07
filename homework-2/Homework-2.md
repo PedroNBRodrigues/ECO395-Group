@@ -2,10 +2,11 @@
 
 ## Question 1
 
-![](Homework-2_files/figure-markdown_strict/unnamed-chunk-4-1.png) We
-can see in the graphs that average boarding is higher in weekdays than
-weekends and higher on October on average. According to the graphs, the
-peak boarding changes slightly during weekdays, the average peak
+![](Homework-2_files/figure-markdown_strict/unnamed-chunk-4-1.png)
+
+We can see in the graphs that average boarding is higher in weekdays
+than weekends and higher on October on average. According to the graphs,
+the peak boarding changes slightly during weekdays, the average peak
 boarding happens around 16:00 (4:00PM), with Thursday’s peak happening
 around 15:00 and the Friday peak happening around 17:00 instead. However
 the peak on the weekends happens at different times, on Sundays, the
@@ -36,13 +37,13 @@ boarding, while 18, lower temperatures will lead to more boarding.
 ## Question 2
 
     ##       V1       V2 
-    ## 66843.64 62467.30
+    ## 67015.74 61999.12
 
     ##   result 
-    ## 69310.64
+    ## 68327.34
 
     ##   result 
-    ## 234085.2
+    ## 233153.6
 
 The linear model achieves a lower out-of-sample mean-squared error. When
 we choose this model, we choose to regress both models, the linear and
@@ -68,43 +69,43 @@ relevant interactions before deciding the actual price of the property.
     ## [1] 56
 
     ##             (Intercept)                 lotSize                     age 
-    ##            6.080001e+04           -5.300758e+03           -1.164004e+03 
+    ##            7.188476e+04            1.252568e+04           -8.851440e+02 
     ##               landValue              livingArea              pctCollege 
-    ##            1.839941e-01            8.064404e+01           -1.929077e+03 
+    ##           -3.510370e-01            3.513859e+01           -1.731191e+03 
     ##                bedrooms              fireplaces               bathrooms 
-    ##           -3.503752e+04            7.839612e+04            2.873648e+04 
+    ##           -1.149963e+04            7.337308e+04            3.633269e+04 
     ##                   rooms            centralAirNo             lotSize:age 
-    ##            1.163236e+04            5.377771e+04           -1.527844e+02 
+    ##            6.936680e+03            2.465775e+04           -1.109810e+02 
     ##       lotSize:landValue      lotSize:livingArea      lotSize:pctCollege 
-    ##           -1.992192e-02           -1.453726e+01            4.351005e+02 
+    ##           -5.176543e-02           -2.772385e-01           -3.657215e+01 
     ##        lotSize:bedrooms      lotSize:fireplaces       lotSize:bathrooms 
-    ##            1.081378e+04           -1.320249e+04            8.345940e+02 
+    ##            1.684595e+03           -3.790827e+03            1.363544e+03 
     ##           lotSize:rooms    lotSize:centralAirNo           age:landValue 
-    ##            4.001772e+02           -9.160205e+03            4.931843e-03 
+    ##           -4.004264e+02           -2.869866e+03            3.223499e-03 
     ##          age:livingArea          age:pctCollege            age:bedrooms 
-    ##           -3.545986e-02            1.141979e+01            1.169888e+02 
+    ##           -2.077039e-01            1.034973e+01            7.874419e+01 
     ##          age:fireplaces           age:bathrooms               age:rooms 
-    ##           -9.116434e+01            1.360087e+02           -7.283341e+01 
+    ##           -9.732673e+01            2.277350e+02           -5.760070e+01 
     ##        age:centralAirNo    landValue:livingArea    landValue:pctCollege 
-    ##            4.984144e+02           -3.676608e-04            2.079532e-02 
+    ##            3.209189e+02           -4.951468e-04            2.814933e-02 
     ##      landValue:bedrooms    landValue:fireplaces     landValue:bathrooms 
-    ##           -1.747095e-01           -3.664128e-01            4.982437e-01 
+    ##           -1.510986e-01           -2.134988e-01            4.291507e-01 
     ##         landValue:rooms  landValue:centralAirNo   livingArea:pctCollege 
-    ##           -1.723801e-02            2.407676e-02           -9.002450e-02 
+    ##            3.839429e-02            8.996045e-02            3.183082e-01 
     ##     livingArea:bedrooms   livingArea:fireplaces    livingArea:bathrooms 
-    ##           -5.210058e+00            3.401372e+01           -7.507431e+00 
+    ##            1.839945e+00            2.420323e+01            3.440624e+00 
     ##        livingArea:rooms livingArea:centralAirNo     pctCollege:bedrooms 
-    ##            3.893242e+00           -2.357309e+00            8.141640e+02 
+    ##            3.375004e+00           -2.025632e+01            3.810806e+02 
     ##   pctCollege:fireplaces    pctCollege:bathrooms        pctCollege:rooms 
-    ##           -1.029956e+03           -9.227900e+01           -8.701365e+01 
+    ##           -9.766448e+02           -1.436633e+02           -2.255952e+01 
     ## pctCollege:centralAirNo     bedrooms:fireplaces      bedrooms:bathrooms 
-    ##           -5.133811e+02           -1.402377e+04            2.361879e+03 
+    ##           -1.256512e+02           -9.581948e+03           -4.487935e+03 
     ##          bedrooms:rooms   bedrooms:centralAirNo    fireplaces:bathrooms 
-    ##           -1.632433e+03            1.969929e+03           -4.240364e+03 
+    ##           -1.197759e+03            7.139285e+03           -6.291532e+03 
     ##        fireplaces:rooms fireplaces:centralAirNo         bathrooms:rooms 
-    ##           -1.182867e+03            8.269941e+03           -3.853309e+02 
+    ##           -9.345143e+02            5.374683e+03           -1.545641e+03 
     ##  bathrooms:centralAirNo      rooms:centralAirNo 
-    ##           -1.560727e+04           -2.919417e+03
+    ##           -7.095237e+03           -1.877065e+03
 
 ## Question 3
 
@@ -141,11 +142,11 @@ average change higher.
 
 ## Question 4
 
-    ## [1] 0.2621973
+    ## [1] 0.2645717
 
-    ## [1] 0.2284214
+    ## [1] 0.2317574
 
-    ## [1] 0.2290049
+    ## [1] 0.2335756
 
     ## [1] 49
 
