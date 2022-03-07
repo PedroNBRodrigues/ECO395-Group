@@ -43,7 +43,8 @@ ggplot(ordered_metro) +
        y= 'Average Boarding',
        title= 'Average boarding by hour of the day, for each day of the week and month')
 ```
-  We can see in the graphs that average boarding is higher in weekdays than weekends and higher on October on average. According to the graphs, the peak boarding changes slightly during weekdays, the average peak boarding happens around 16:00 (4:00PM), with Thursday's peak happening around 15:00 and the Friday peak happening around 17:00 instead. However the peak on the weekends happens at different times, on Sundays, the peak hour is around 13:00-14:00, while on Saturdays there are two very similar peaks, at 15:00 and 17:00. One of the reason for the smaller boarding on Monday's during September could be that there is Labor Day once a year, where majority of workers and students have a free day, so they don't require the bus to attend class or jobs. Thanksgiving happens during the fourth week of November, therefore employees and students are usually given Wednesday, Thursday and Friday of vacation during that week. This lower the average number of boarding during the month of November.
+  We can see in the graphs that average boarding is higher in weekdays than weekends and higher on October on average. According to the graphs, the peak boarding changes slightly during weekdays, the average peak boarding happens around 16:00 (4:00PM), with Thursday's peak happening around 15:00 and the Friday peak happening around 17:00 instead. However the peak on the weekends happens at different times, on Sundays, the peak hour is around 13:00-14:00, while on Saturdays there are two very similar peaks, at 15:00 and 17:00. One of the reason for the smaller boarding on Monday's during September could be that there is Labor Day once a year, where majority of workers and students have a free day, so they don't require the bus to attend class or jobs. Thanksgiving happens during the fourth week of November, therefore employees and students are usually given Wednesday, Thursday and Friday of vacation during that week. This lower the average number of boarding during the month of November.  
+  
 ```{r echo=FALSE}
 ## Second Graph
 ggplot(capmetro_UT) +
@@ -53,10 +54,12 @@ ggplot(capmetro_UT) +
        y= 'Boarding',
        title= 'Boardings by temperature, divided by hour of day and weekday')
 ```
-  Those graphs show the boarding at a given 15 minute slot depending on the temperature. It is separated by the hour of the day and whether is a weekday or a weekend. The results show a much higher boarding during weekdays, which can be explained by students needing to attend class and workers needing to attend their jobs. When we hold hour of day and weekend status constant, we see that a change in temperature has different effects depending on the hour of the day. In majority of the hours, change in temperature doesn't affect the boarding. However, during the hours of 15-18, a change in temperature will lead to different boarding. At 15, higher temperatures will lead to more boarding, while 18, lower temperatures will lead to more boarding. 
+   
+  Those graphs show the boarding at a given 15 minute slot depending on the temperature. It is separated by the hour of the day and whether is a weekday or a weekend. The results show a much higher boarding during weekdays, which can be explained by students needing to attend class and workers needing to attend their jobs. When we hold hour of day and weekend status constant, we see that a change in temperature has different effects depending on the hour of the day. In majority of the hours, change in temperature doesn't affect the boarding. However, during the hours of 15-18, a change in temperature will lead to different boarding. At 15, higher temperatures will lead to more boarding, while 18, lower temperatures will lead to more boarding.     
+  
 
 ## Question 2
-```{r echo=FALSE}
+```{r include=FALSE}
 library(tidyverse)
 library(ggplot2)
 library(modelr)

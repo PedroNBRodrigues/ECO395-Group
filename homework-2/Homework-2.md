@@ -18,9 +18,11 @@ during the fourth week of November, therefore employees and students are
 usually given Wednesday, Thursday and Friday of vacation during that
 week. This lower the average number of boarding during the month of
 November.
-![](Homework-2_files/figure-markdown_strict/unnamed-chunk-5-1.png) Those
-graphs show the boarding at a given 15 minute slot depending on the
-temperature. It is separated by the hour of the day and whether is a
+
+![](Homework-2_files/figure-markdown_strict/unnamed-chunk-5-1.png)
+
+Those graphs show the boarding at a given 15 minute slot depending on
+the temperature. It is separated by the hour of the day and whether is a
 weekday or a weekend. The results show a much higher boarding during
 weekdays, which can be explained by students needing to attend class and
 workers needing to attend their jobs. When we hold hour of day and
@@ -33,43 +35,14 @@ boarding, while 18, lower temperatures will lead to more boarding.
 
 ## Question 2
 
-    ## 
-    ## Attaching package: 'modelr'
-
-    ## The following object is masked from 'package:mosaic':
-    ## 
-    ##     resample
-
-    ## The following object is masked from 'package:ggformula':
-    ## 
-    ##     na.warn
-
-    ## 
-    ## Attaching package: 'caret'
-
-    ## The following object is masked from 'package:mosaic':
-    ## 
-    ##     dotPlot
-
-    ## The following object is masked from 'package:purrr':
-    ## 
-    ##     lift
-
-    ## 
-    ## Attaching package: 'foreach'
-
-    ## The following objects are masked from 'package:purrr':
-    ## 
-    ##     accumulate, when
-
     ##       V1       V2 
-    ## 66132.40 61225.09
+    ## 66843.64 62467.30
 
     ##   result 
-    ## 68073.62
+    ## 69310.64
 
     ##   result 
-    ## 234951.6
+    ## 234085.2
 
 The linear model achieves a lower out-of-sample mean-squared error. When
 we choose this model, we choose to regress both models, the linear and
@@ -95,43 +68,43 @@ relevant interactions before deciding the actual price of the property.
     ## [1] 56
 
     ##             (Intercept)                 lotSize                     age 
-    ##            1.321695e+05           -1.815254e+04           -1.260207e+03 
+    ##            6.080001e+04           -5.300758e+03           -1.164004e+03 
     ##               landValue              livingArea              pctCollege 
-    ##            1.618880e-01            4.290588e+01           -2.714369e+03 
+    ##            1.839941e-01            8.064404e+01           -1.929077e+03 
     ##                bedrooms              fireplaces               bathrooms 
-    ##           -2.118088e+04            1.041979e+05            4.003988e+03 
+    ##           -3.503752e+04            7.839612e+04            2.873648e+04 
     ##                   rooms            centralAirNo             lotSize:age 
-    ##            8.799530e+03            2.276161e+04           -2.258833e+02 
+    ##            1.163236e+04            5.377771e+04           -1.527844e+02 
     ##       lotSize:landValue      lotSize:livingArea      lotSize:pctCollege 
-    ##           -2.365327e-01           -7.147614e+00            6.988159e+02 
+    ##           -1.992192e-02           -1.453726e+01            4.351005e+02 
     ##        lotSize:bedrooms      lotSize:fireplaces       lotSize:bathrooms 
-    ##            5.866264e+03           -3.072667e+03           -7.275084e+03 
+    ##            1.081378e+04           -1.320249e+04            8.345940e+02 
     ##           lotSize:rooms    lotSize:centralAirNo           age:landValue 
-    ##            2.505801e+03           -5.465592e+03            3.504382e-03 
+    ##            4.001772e+02           -9.160205e+03            4.931843e-03 
     ##          age:livingArea          age:pctCollege            age:bedrooms 
-    ##            1.478103e-01            1.304823e+01            1.209168e+02 
+    ##           -3.545986e-02            1.141979e+01            1.169888e+02 
     ##          age:fireplaces           age:bathrooms               age:rooms 
-    ##           -1.664269e+02           -8.840464e+01           -4.014880e+01 
+    ##           -9.116434e+01            1.360087e+02           -7.283341e+01 
     ##        age:centralAirNo    landValue:livingArea    landValue:pctCollege 
-    ##            3.313640e+02           -2.857484e-04            1.885429e-02 
+    ##            4.984144e+02           -3.676608e-04            2.079532e-02 
     ##      landValue:bedrooms    landValue:fireplaces     landValue:bathrooms 
-    ##           -1.449667e-01           -2.889606e-01            4.290902e-01 
+    ##           -1.747095e-01           -3.664128e-01            4.982437e-01 
     ##         landValue:rooms  landValue:centralAirNo   livingArea:pctCollege 
-    ##           -6.386804e-03            1.418225e-01            5.941350e-01 
+    ##           -1.723801e-02            2.407676e-02           -9.002450e-02 
     ##     livingArea:bedrooms   livingArea:fireplaces    livingArea:bathrooms 
-    ##           -8.944776e+00            2.037167e+01            2.861889e+00 
+    ##           -5.210058e+00            3.401372e+01           -7.507431e+00 
     ##        livingArea:rooms livingArea:centralAirNo     pctCollege:bedrooms 
-    ##            2.969898e+00           -1.165967e+01            4.670690e+02 
+    ##            3.893242e+00           -2.357309e+00            8.141640e+02 
     ##   pctCollege:fireplaces    pctCollege:bathrooms        pctCollege:rooms 
-    ##           -1.127599e+03            1.825651e+02           -7.488120e+01 
+    ##           -1.029956e+03           -9.227900e+01           -8.701365e+01 
     ## pctCollege:centralAirNo     bedrooms:fireplaces      bedrooms:bathrooms 
-    ##           -7.337009e+01           -1.516784e+04            5.955459e+03 
+    ##           -5.133811e+02           -1.402377e+04            2.361879e+03 
     ##          bedrooms:rooms   bedrooms:centralAirNo    fireplaces:bathrooms 
-    ##           -8.172355e+02            4.721231e+03           -8.806100e+03 
+    ##           -1.632433e+03            1.969929e+03           -4.240364e+03 
     ##        fireplaces:rooms fireplaces:centralAirNo         bathrooms:rooms 
-    ##           -3.313349e+02            7.126804e+03           -1.622685e+03 
+    ##           -1.182867e+03            8.269941e+03           -3.853309e+02 
     ##  bathrooms:centralAirNo      rooms:centralAirNo 
-    ##           -1.216157e+04           -2.278952e+03
+    ##           -1.560727e+04           -2.919417e+03
 
 ## Question 3
 
@@ -168,11 +141,11 @@ average change higher.
 
 ## Question 4
 
-    ## [1] 0.2618266
+    ## [1] 0.2621973
 
-    ## [1] 0.2285849
+    ## [1] 0.2284214
 
-    ## [1] 0.2282182
+    ## [1] 0.2290049
 
     ## [1] 49
 
