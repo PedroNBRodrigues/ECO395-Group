@@ -1,0 +1,435 @@
+---
+output:
+  md_document
+---
+# Homework 2
+
+```{r include=FALSE}
+library(rmarkdown)
+library(tidyverse)
+library(mosaic)
+rm(list = ls())
+```
+
+
+## Question 1
+``` {r include=FALSE}
+capmetro_UT <- read.csv("~/Desktop/Data-Mining/ECO395M-Mining/data/capmetro_UT.csv")
+
+# Recode the categorical variables in sensible, rather than alphabetical, order
+capmetro_UT = mutate(capmetro_UT,
+                     day_of_week = factor(day_of_week,
+                                          levels=c("Mon", "Tue", "Wed","Thu", "Fri", "Sat", "Sun")),
+                     month = factor(month,
+                                    levels=c("Sep", "Oct","Nov")))
+
+```
+
+
+``` {r include=FALSE}
+## First Graph
+ordered_metro = capmetro_UT %>%
+  group_by(hour_of_day, day_of_week, month) %>%
+  mutate(people = sum(boarding, na.rm=TRUE),
+         average_boarding = people/n(),
+         )
+```
+
+```{r echo=FALSE}
+ggplot(ordered_metro) + 
+  geom_line(aes(x=hour_of_day, y=average_boarding, color=month)) +
+  facet_wrap(~day_of_week) + 
+  labs(x='Hour of the day (Military Time)',
+       y= 'Average Boarding',
+       title= 'Average boarding by hour of the day, for each day of the week and month')
+```
+  We can see in the graphs that average boarding is higher in weekdays than weekends and higher on October on average. According to the graphs, the peak boarding changes slightly during weekdays, the average peak boarding happens around 16:00 (4:00PM), with Thursday's peak happening around 15:00 and the Friday peak happening around 17:00 instead. However the peak on the weekends happens at different times, on Sundays, the peak hour is around 13:00-14:00, while on Saturdays there are two very similar peaks, at 15:00 and 17:00. One of the reason for the smaller boarding on Monday's during September could be that there is Labor Day once a year, where majority of workers and students have a free day, so they don't require the bus to attend class or jobs. Thanksgiving happens during the fourth week of November, therefore employees and students are usually given Wednesday, Thursday and Friday of vacation during that week. This lower the average number of boarding during the month of November.
+```{r echo=FALSE}
+## Second Graph
+ggplot(capmetro_UT) +
+  geom_point(aes(x=temperature, y=boarding, color=weekend)) +
+  facet_wrap(~hour_of_day) + 
+  labs(x='Temperature in ºF',
+       y= 'Boarding',
+       title= 'Boardings by temperature, divided by hour of day and weekday')
+```
+  Those graphs show the boarding at a given 15 minute slot depending on the temperature. It is separated by the hour of the day and whether is a weekday or a weekend. The results show a much higher boarding during weekdays, which can be explained by students needing to attend class and workers needing to attend their jobs. When we hold hour of day and weekend status constant, we see that a change in temperature has different effects depending on the hour of the day. In majority of the hours, change in temperature doesn't affect the boarding. However, during the hours of 15-18, a change in temperature will lead to different boarding. At 15, higher temperatures will lead to more boarding, while 18, lower temperatures will lead to more boarding. 
+
+## Question 2
+```{r echo=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(modelr)
+library(rsample)
+library(mosaic)
+library(caret)
+library(parallel)
+library(foreach)
+rm(list = ls())
+
+data(SaratogaHouses)
+```
+
+```{r include=FALSE}
+# Normal Train/Test
+rmse_sim = do(100)*{
+  saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
+  saratoga_train = training(saratoga_split)
+  saratoga_test = testing(saratoga_split)
+  
+  lm2 = lm(price ~ . - pctCollege - sewer - waterfront - landValue - newConstruction, data=saratoga_train)
+  lm3 = lm(price ~ (. - waterfront - heating - sewer - newConstruction - fuel)^2, data=saratoga_train)
+  
+  model_errors = c(rmse(lm2, saratoga_test), rmse(lm3, saratoga_test))
+  
+  model_errors
+}
+```
+
+```{r echo=FALSE}
+colMeans(rmse_sim)
+```
+
+```{r include=FALSE}
+# Testing for best K
+K_folds = 5
+
+k_grid = c(2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 45,
+           50, 60, 70, 80, 90, 100, 125, 150, 175, 200, 250, 300)
+
+saratoga_folds = crossv_kfold(SaratogaHouses, k=K_folds)
+
+cv_grid = foreach(k = k_grid, .combine='rbind') %dopar% {
+  models = map(saratoga_folds$train, ~ knnreg(price ~ . - waterfront - heating - sewer - newConstruction - fuel - 1, k=k, data = ., use.all=FALSE))
+  errs = map2_dbl(models, saratoga_folds$test, modelr::rmse)
+  c(k=k, err = mean(errs), std_err = sd(errs)/sqrt(K_folds))
+} %>% as.data.frame
+
+cv_grid %>%
+  arrange(err)
+
+ggplot(cv_grid) + 
+  geom_point(aes(x=k, y=err)) + 
+  geom_errorbar(aes(x=k, ymin = err-std_err, ymax = err+std_err)) + 
+  scale_x_log10()
+# Best k is around 5-10
+```
+
+```{r include=FALSE}
+rmse_sim2 = do(100)*{
+  saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
+  saratoga_train = training(saratoga_split)
+  saratoga_test = testing(saratoga_split)
+  
+  lm5 = knnreg(price ~ . - waterfront - heating - sewer - newConstruction - fuel, data=saratoga_train, k=10)
+  
+  model_errors = c(rmse(lm5, saratoga_test))
+  
+  model_errors
+}
+```
+
+```{r echo=FALSE}
+colMeans(rmse_sim2)
+```
+
+```{r include=FALSE}
+rmse_sim = do(100)*{
+  saratoga_split = initial_split(SaratogaHouses, prop = 0.8)
+  saratoga_train = training(saratoga_split)
+  saratoga_test = testing(saratoga_split)
+  
+  Xtrain = model.matrix(~ . - waterfront - heating - sewer - newConstruction - fuel - 1, data=saratoga_train) %>% as.data.frame
+  Xtest = model.matrix(~ . - waterfront - heating - sewer - newConstruction - fuel - 1, data=saratoga_test) %>% as.data.frame
+  
+  Ytrain = saratoga_train$price
+  Ytest = saratoga_test$price
+  
+  scale_train = apply(Xtrain, 2, sd)
+  Xtilde_train = scale(Xtrain, scale = scale_train) %>% as.data.frame
+  Xtilde_test = scale(Xtest, scale = scale_train) %>% as.data.frame
+  
+  knn5 = knnreg(price ~ . - 1, data=Xtilde_train, k=5)
+
+  model_errors = c(rmse(knn5, Xtest))
+  
+  model_errors
+}
+```
+
+```{r echo=FALSE}
+colMeans(rmse_sim)
+```
+
+  The linear model achieves a lower out-of-sample mean-squared error. When we choose this model, we choose to regress both models, the linear and the knn under the same conditions. First we compared the linear model using simple features of the house and then using more interactions between the same features. From the model, we can conclude that not only we must assume a relation between the variables and the price, but between the variables themselves first and the price. We need to evaluate the size of the property, the number of rooms, bathrooms and land value, after that is done we should also realize that for example the number of rooms in different properties is also relevant, as each room in a small property will increase the price of the house less than in a big property, while the living space of a house will decrease the value of a big property more than a small property. Other things to consider are that older houses with more bathrooms have higher prices than newer houses with the same amount of bathrooms or that houses with big living areas have lower values than houses with small living areas with same amount of bedrooms. Given all that, we should consider all relevant interactions before deciding the actual price of the property.
+  
+```{r echo=FALSE}
+length(coef(lm2))
+length(coef(lm3))
+coef(lm3)
+```
+
+## Question 3
+``` {r include=FALSE}
+rm(list = ls())
+
+german_credit <- read.csv("~/Desktop/Data-Mining/ECO395M-Mining/data/german_credit.csv")
+```
+
+``` {r include=FALSE}
+prob_default = german_credit %>%
+  group_by(history) %>%
+  mutate(total=n()) %>%
+  group_by(Default, history) %>%
+  mutate(by_history = n()) %>%
+  filter(Default==1) %>%
+  mutate(prob = by_history/total/by_history)
+prob_default
+```
+
+``` {r echo=FALSE}
+ggplot(prob_default) + 
+  geom_col(aes(x=history, y=prob)) 
+```
+
+``` {r include=FALSE}
+logit_default = glm(Default ~ duration + amount + installment + age + history + purpose + foreign, data=german_credit, family='binomial')
+```
+
+``` {r echo=FALSE}
+coef(logit_default) %>% round(2)
+```
+
+  When we plot the default probability, we found that there is higher probability of defaulting when you have a good credit history, furthermore when we produce a logit regression, we found the same results. For us that is unusual, as usually a person with a good credit history would be less likely to default any loan, as there is history of making payments on time, while we should expect the poor and terrible credit history to have higher positive impact on the probability of default, instead we find the opposite. We think that this data set isn't good to screen prospective borrowers, because although the data tells us that good credit history usually leads to higher probabilities of default, we see that in the "real world", it's the opposite, those with good credit history are known for paying their bills on time, not letting due dates pass and being ideal borrowers as the guarantee of return is higher. We believe that the biggest problem was that the data was collected retrospectively, so at the moment they were creating this data set, it's possible that some of the borrowers that are now classified as "good" were classified as "poor" at the moment they had this loan with the bank, we can also argue that due to less than 20% of the observations being "good" credit history, the effect of one default in this group is higher than in other groups, because it makes the average change higher.
+  
+## Question 4
+``` {r include=FALSE}
+rm(list = ls())
+
+hotels_dev <- read.csv("~/Desktop/Data-Mining/ECO395M-Mining/data/hotels_dev.csv")
+
+hotels_split = initial_split(hotels_dev, prop = 0.8)
+hotels_train = training(hotels_split)
+hotels_test = testing(hotels_split)
+
+lm1 = lm(children ~ market_segment + adults + customer_type + is_repeated_guest, data=hotels_train)
+lm2 = lm(children ~ . - arrival_date, data=hotels_train)
+lm3 = lm(children ~ (. - required_car_parking_spaces - deposit_type - previous_cancellations - lead_time), data=hotels_train)
+```
+
+``` {r echo=FALSE}
+rmse(lm1, hotels_test)
+rmse(lm2, hotels_test)
+rmse(lm3, hotels_test)
+length(coef(lm2))
+length(coef(lm3))
+```
+
+``` {r include=FALSE}
+hotels_val <- read.csv("~/Desktop/Data-Mining/ECO395M-Mining/data/hotels_val.csv")
+
+
+lmval = lm(children ~ (. - required_car_parking_spaces - deposit_type - previous_cancellations - lead_time), data=hotels_val)
+
+test = predict(lm3, hotels_val)
+maybe = ifelse(test > 0.5, 1, 0)
+confusion = table(children = hotels_val$children, childrenhat = maybe)
+confusion
+
+
+sum(diag(confusion))/sum(confusion)
+```
+
+``` {r include=FALSE}
+library(ROCR)
+p <- predict(lmval, hotels_val, type = "response")
+
+roc_pred <- prediction(predictions = p  , labels = hotels_val$children)
+roc_perf <- performance(roc_pred , "tpr" , "fpr")
+```
+
+``` {r echo=FALSE}
+plot(roc_perf)
+```
+
+# B
+``` {r include=FALSE}
+K_folds = 20
+hotels_val_folds = crossv_kfold(hotels_val, k=K_folds)
+
+hotels_val = hotels_val %>%
+  mutate(fold_id = rep(1:K_folds, length=nrow(hotels_val)) %>% sample)
+
+
+hotels_val1 = hotels_val %>%
+  filter(fold_id==1)
+hotels_val1 = hotels_val1 %>%
+  mutate(try = predict(lmval, hotels_val1),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val2 = hotels_val %>%
+  filter(fold_id==2)
+hotels_val2 = hotels_val2 %>%
+  mutate(try = predict(lmval, hotels_val2),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val3 = hotels_val %>%
+  filter(fold_id==3) 
+hotels_val3 = hotels_val3 %>%
+  mutate(try = predict(lmval, hotels_val3),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val4 = hotels_val %>%
+  filter(fold_id==4)
+hotels_val4 = hotels_val4 %>%
+  mutate(try = predict(lmval, hotels_val4),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val5 = hotels_val %>%
+  filter(fold_id==5) 
+hotels_val5 = hotels_val5 %>%
+  mutate(try = predict(lmval, hotels_val5),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val6 = hotels_val %>%
+  filter(fold_id==6) 
+hotels_val6 = hotels_val6 %>%
+  mutate(try = predict(lmval, hotels_val6),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val7 = hotels_val %>%
+  filter(fold_id==7) 
+hotels_val7 = hotels_val7 %>%
+  mutate(try = predict(lmval, hotels_val7),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val8 = hotels_val %>%
+  filter(fold_id==8) 
+hotels_val8 = hotels_val8 %>%
+  mutate(try = predict(lmval, hotels_val8),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val9 = hotels_val %>%
+  filter(fold_id==9) 
+hotels_val9 = hotels_val9 %>%
+  mutate(try = predict(lmval, hotels_val9),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val10 = hotels_val %>%
+  filter(fold_id==10) 
+hotels_val10 = hotels_val10 %>%
+  mutate(try = predict(lmval, hotels_val10),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val11 = hotels_val %>%
+  filter(fold_id==11) 
+hotels_val11 = hotels_val11 %>%
+  mutate(try = predict(lmval, hotels_val11),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val12 = hotels_val %>%
+  filter(fold_id==12) 
+hotels_val12 = hotels_val12 %>%
+  mutate(try = predict(lmval, hotels_val12),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val13 = hotels_val %>%
+  filter(fold_id==13) 
+hotels_val13 = hotels_val13 %>%
+  mutate(try = predict(lmval, hotels_val13),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val14 = hotels_val %>%
+  filter(fold_id==14) 
+hotels_val14 = hotels_val14 %>%
+  mutate(try = predict(lmval, hotels_val14),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val15 = hotels_val %>%
+  filter(fold_id==15) 
+hotels_val15 = hotels_val15 %>%
+  mutate(try = predict(lmval, hotels_val15),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val16 = hotels_val %>%
+  filter(fold_id==16) 
+hotels_val16 = hotels_val16 %>%
+  mutate(try = predict(lmval, hotels_val16),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val17 = hotels_val %>%
+  filter(fold_id==17) 
+hotels_val17 = hotels_val17 %>%
+  mutate(try = predict(lmval, hotels_val17),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val18 = hotels_val %>%
+  filter(fold_id==18) 
+hotels_val18 = hotels_val18 %>%
+  mutate(try = predict(lmval, hotels_val18),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val19 = hotels_val %>%
+  filter(fold_id==19) 
+hotels_val19 = hotels_val19 %>%
+  mutate(try = predict(lmval, hotels_val19),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+hotels_val20 = hotels_val %>%
+  filter(fold_id==20) 
+hotels_val20 = hotels_val20 %>%
+  mutate(try = predict(lmval, hotels_val20),
+         count = sum(try),
+         truecount = sum(children),
+         difference = count - truecount)
+
+
+
+data <- matrix(c(20.04727, 28, -7.952726, 18.96735, 18, 0.9673483, 19.05725, 15, 4.057246, 24.46831, 23, .468307, 17.58191, 19, -1.418094, 15.06248, 16, -0.9375197, 19.39116, 24, -4.60884, 18.75115, 15, 3.751151, 22.50651, 23, -0.4934916, 14.60247, 11, 3.602475, 20.01266, 21, -0.9873403, 20.9443, 18, 2.944299, 24.93791, 21, 3.937911, 21.62972, 23, -1.370277, 23.46356, 24, -0.5364365, 19.20022
+, 24, -4.799785, 21.37219, 20, 1.372188, 22.84855, 26, -3.151447, 19.27723, 16, 3.277234, 17.8778, 17, 0.8777976), ncol=3, byrow=TRUE)
+colnames(data) <- c("Predicted Children","Number of Children","Difference")
+rownames(data) <- c('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20')
+data <- as.table(data)
+```
+
+``` {r echo=FALSE}
+data
+``` 
