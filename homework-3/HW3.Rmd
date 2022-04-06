@@ -1,6 +1,6 @@
 ---
 title: "Homework 3"
-author: "Pedro Rodrigues and Sean Piercer"
+author: "Pedro Rodrigues and Sean Pierce"
 output: md_document
 ---
 ``` {r include=FALSE}
