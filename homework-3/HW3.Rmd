@@ -1,0 +1,403 @@
+---
+title: "Homework 3"
+author: "Pedro Rodrigues and Sean Piercer"
+output: md_document
+---
+``` {r include=FALSE}
+rm(list = ls())
+library(tidyverse)
+library(lubridate)
+library(randomForest)
+library(gbm)
+library(pdp)
+library(modelr)
+library(rsample)
+library(rpart)
+library(rpart.plot)
+library(ggmap)
+library(dplyr)
+library(forcats)
+library(knitr)
+```
+
+## Question 1 - What causes what?
+
+### 1 - Why can’t I just get data from a few different cities and run the regression of “Crime” on “Police” to understand how more cops in the streets affect crime? (“Crime” refers to some measure of crime rate and “Police” measures the number of cops in a city.)  
+  
+You can't simply run a regression of "Crime" on "Police", because it's ambiguous whether more cops on the streets will lead to higher crime rates or if higher crime rates will lead to more cops on the streets. The variables will probably be very positively correlated.  
+  
+### 2 - How were the researchers from UPenn able to isolate this effect? Briefly describe their approach and discuss their result in the “Table 2” below, from the researchers' paper.  
+  
+The researchers at UPENN decided to gather data on crime from DC and whether the day correlated with each observation was a high alert day or not. By law, there must always be more cops on the streets on high alert days, so it eliminates the idea that more crime would create more cops on this data. From that, they found that days on high alert, or in other words, days with more cops there is less crime in the city, so they were able to conclude the decrease, more specifically 7.316 cases in crime by the presence of of more police.  
+  
+### 3 - Why did they have to control for Metro ridership? What was that trying to capture?  
+  
+There is the assumption that when less people are riding the metro, there are less chances of a crime happening, as there are less people on the streets. So when they choose to control for METRO ridership  they are trying to establish the effect of more police on crime while removing possible bias from less people on the streets on those high alert days. 
+  
+### 4 - Below I am showing you "Table 4" from the researchers' paper. Just focus on the first column of the table. Can you describe the model being estimated here? What is the conclusion?  
+  
+They estimate crime rates on two interactions and controlling for METRO ridership. They choose to interact the high alert and District 1, as well as high alert and Other Districts. With those interactions they are testing for the effect of high alert in different areas. We can see that in District 1, where the US Capitol, Chinatown, the downtown business district, etc. are located, the high alert day have a stronger negative effect on crime, which makes sense, given that the best targets would be in this area, so the mayor would deploy more cops in there than in other districts. The second value is not statistically significant, so we cannot say that the effect of the high alert on crime in the other districts is different than 0.  
+  
+## Question 2 - Tree modeling: dengue cases  
+```{r include=FALSE}
+rm(list = ls())
+dengue <- read.csv("~/Desktop/Data-Mining/ECO395M-Mining/data/dengue.csv")
+set.seed(42)
+dengue$season = factor(dengue$season)
+dengue$city = factor(dengue$city)
+
+dengue_split =  initial_split(dengue, prop=0.8)
+dengue_train = training(dengue_split)
+dengue_test  = testing(dengue_split)
+
+#CART model
+
+tree_ofdengue = rpart(total_cases ~  city + season + specific_humidity + precipitation_amt + tdtr_k, data=dengue_train,
+                          control=rpart.control(cp = 0.00002))
+
+complex_lev = function(oftree) {
+  frame = as.data.frame(oftree$cptable)
+  min = min(frame$xstd + frame$xerror)
+  max_complev = max(frame$CP[frame$xerror <= min])
+  max_complev
+}
+
+complex_lev(tree_ofdengue)
+
+
+#pruning the tree based on known standard error complexity level
+
+se_prune = function(oftree) {
+  frame = as.data.frame(oftree$cptable)
+  min = min(frame$xstd + frame$xerror)
+  max = max(frame$CP[frame$xerror <= min])
+  prune(oftree, cp=max)
+}
+
+
+#Now ploting the pruned tree
+
+prune_tree = se_prune(tree_ofdengue)
+rpart.plot(prune_tree, digits=-5, type=4, extra=1)
+plotcp(prune_tree)
+```
+
+```{r include=FALSE}
+#We will now use a random forest model
+
+random_forest = randomForest(total_cases ~ city + season + specific_humidity + precipitation_amt + tdtr_k,
+                       data=dengue_train, na.action = na.exclude)
+
+
+#We can use this plot to check the proper amount of iterations
+
+plot(random_forest)
+
+y = predict(random_forest, dengue_test)
+plot(y, dengue_test$total_cases)
+
+
+#This plot tells us how important each variable is by how much it decreases SSE
+
+varImpPlot(random_forest)
+```
+
+```{r include=FALSE}
+#Gradient boosted trees
+#Assuming gaussian
+
+grad_boost = gbm(total_cases ~ city + season + specific_humidity + precipitation_amt + tdtr_k, 
+             data = dengue_train, interaction.depth = 4, n.trees = 400, shrinkage = 0.03)
+
+
+#It seems that the decrease in the error begins to slow down around ~ 200
+
+gbm.perf(grad_boost)
+
+
+
+# RMSE is very low which is a good sign
+
+rmse(grad_boost, dengue_test)
+
+
+#How important each variable is in the model 
+#Specific humidity has the largest relative influence
+
+summary(grad_boost)
+```
+
+```{r include=FALSE}  
+#We want to compare the performance of the models we've created.
+#Once we find the best performing one we'll create partial dependence plots
+
+performance1 = modelr::rmse(tree_ofdengue, dengue_test)
+performance2 = modelr::rmse(random_forest, dengue_test)
+performance3 = modelr::rmse(grad_boost, dengue_test)
+
+performance1
+performance2
+performance3
+
+models = data.frame(
+  CART = performance1,
+  forests = performance2,
+  gradient_boosted = performance3)
+```
+  
+We predicted the dengue cases with three different models, we used the CART, random forest and gradient boosted forest. For the variables of the prediction, we used the city, the season, the specific humidity, the precipitation of the week and the average diurnal temperature range. With the models created, we estimated the RMSE for the models, with the results in the following table:  
+  
+```{r echo=FALSE}
+models
+```
+  
+Given that the random forest model had the smallest RMSE, we used this model for the following dependence plots, where we show the total cases predicted on average when the chosen variable change.  
+  
+```{r echo=FALSE}
+p1 = pdp::partial(random_forest, pred.var = 'specific_humidity')
+ggplot(p1) +
+  geom_line(mapping=aes(x=specific_humidity, y=yhat))
+```
+  
+This line graph shows that this model will predict higher cases for humidity above 19, while it will also predict more cases for humidity of 17 than any lower value.  
+  
+```{r echo=FALSE}
+p2 = pdp::partial(random_forest, pred.var = 'precipitation_amt')
+ggplot(p2) +
+  geom_line(mapping=aes(x=precipitation_amt, y=yhat))
+```
+  
+This line graph shows that precipitations higher than 200 ml per week will lead to a prediction of more cases than smaller precipitations, however we can see that the mimimum prediction of cases is 23.5, while the maximum is approximately 27. We can say that there is very little variation of cases predicted by the precipitation.
+  
+```{r echo=FALSE}
+p3 = pdp::partial(random_forest, pred.var = 'tdtr_k')
+ggplot(p3) +
+  geom_line(mapping=aes(x=tdtr_k, y=yhat))
+```
+  
+This line graph shows that the model predicts higher dengue cases when temperature varies very little and it predicts less as the daily temperature variation increases. It makes sense, as we assume hot days in Peru and Puerto Rico don't vary in temperature a lot throughout the day, so it is more favorable for the dengue mosquito to live.  
+  
+  
+  
+## Question 3 - Predictive model building: green certification  
+```{r include=FALSE}
+rm(list = ls())
+greenbuildings <- read.csv("~/Desktop/Data-Mining/ECO395M-Mining/data/greenbuildings.csv")
+
+greenbuildings = greenbuildings %>%
+  mutate(
+    revenue = Rent * leasing_rate
+  )
+
+## Split the data for testing
+greenbuildings_initial = initial_split(greenbuildings)
+n = nrow(greenbuildings)
+
+greenbuildings_train = training(greenbuildings_initial)
+greenbuildings_test = testing(greenbuildings_initial)
+
+# Whar is more relevant for green rating?
+forest = randomForest(revenue ~ . - Rent - leasing_rate - green_rating,
+                      na.action = na.omit,
+                      data=greenbuildings_train)
+
+greenbuildings_casetest = predict(forest, greenbuildings_test)
+plot(greenbuildings_casetest, greenbuildings_test$revenue)
+
+rmseforest = rmse(forest, greenbuildings_test)
+plot(forest)
+```
+### Methods  
+  
+For this report, our goal was to detect the change in rent on houses with green certificate, such that an architect would choose to contruct if there is more revenue to be made when renting a "green" house. To create a predictive model, we decided to create a variable for the rental income per square foot, which was the average rent per square foot multiplied by the percentage of occupancy of the house. After that, we had to define whether it was more relevant to include the variables for green rating as two separate controls or whether to remove those variables and use the general "green_rating" variable. To do so, we ran two different random forests, one with both variables and one with the general variable only.  
+  
+
+```{r echo=FALSE}
+varImpPlot(forest)
+```
+  
+  
+```{r include=FALSE}
+forest1 = randomForest(revenue ~. - Rent - leasing_rate - LEED - Energystar,
+                      na.action = na.omit,
+                      data=greenbuildings_train)
+
+greenbuildings_casetest = predict(forest1, greenbuildings_test)
+plot(greenbuildings_casetest, greenbuildings_test$revenue)
+
+rmseforest1 = rmse(forest1, greenbuildings_test)
+plot(forest1)
+```
+  
+  
+```{r echo=FALSE}
+varImpPlot(forest1)
+```
+  
+With those graphs, we could see that there was no real difference between which set of variables to use, so we decided to create four different predictive models using the general green rating instead of the two separated ones.  
+  
+```{r include=FALSE}
+# After choosing best variable, compare to boosted
+boost = gbm(revenue ~. - Rent - leasing_rate - LEED - Energystar, 
+             data = greenbuildings_train,
+             interaction.depth=4, n.trees=500, shrinkage=.05)
+
+gbm.perf(boost)
+
+yhat_test_gbm = predict(boost, greenbuildings_test, n.trees=350)
+
+rmsegradient = rmse(boost, greenbuildings_test)
+
+
+# Compare to linears
+lm2 = lm(revenue ~. - Rent - leasing_rate - LEED - Energystar, data=greenbuildings_train)
+lm3 = lm(revenue ~ (. - Rent - leasing_rate - LEED - Energystar)^2, data=greenbuildings_train)
+rmsemedium = rmse(lm2, greenbuildings_test)
+rmselarge = rmse(lm3, greenbuildings_test)
+```
+  
+```{r echo=FALSE} 
+
+tab1 <- matrix(c(rmseforest1, rmsegradient, rmsemedium, rmselarge), ncol=1, byrow=TRUE)
+colnames(tab1) <- c("RMSE")
+rownames(tab1) <- c("Random Forest", "Boosted Forest", "Medium Model", "Large Model")
+tab1 <- as.table(tab1)
+
+kable(tab1, align="lr", caption="Table with prediction model's RMSE")
+```
+  
+The results, which are shown on the above table, lead us to use the random forest model to predict the rental income per square foot, as it had the smallest RMSE.  
+  
+```{r echo=FALSE}
+p4 = pdp::partial(forest1, pred.var = 'green_rating')
+ggplot(p4) +
+  geom_line(mapping=aes(x=green_rating, y=yhat))
+```
+  
+### Conclusion  
+  
+After predicting the value with our model, we decided to graph the average rental income per square foot associated with the green certificate. The graph shows that there is on average approximately $55-65 difference between having a green certificate or not. That means it is not very significant on the rental income the house having a green certificate.  
+  
+  
+
+
+
+  
+## Question 4 - Predictive model building: California housing  
+``` {r include=FALSE}
+rm(list = ls())
+CAhousing <- read.csv("~/Desktop/Data-Mining/ECO395M-Mining/data/CAhousing.csv")
+
+########## Calculating average variables and getting map of California
+CAhousing = CAhousing %>%
+mutate(averagerooms = totalRooms/households,
+       averagebedrooms = totalBedrooms/households,
+       averagetenants = population/households)
+
+ca_space <- c(left = -125, right = - 113, top = 42, bottom = 32)
+CA = get_stamenmap(bbox = ca_space, zoom = 7)
+```
+
+``` {r include=FALSE}
+########## Splitting data
+CAhousing_initial = initial_split(CAhousing)
+n = nrow(CAhousing)
+
+CAhousing_train = training(CAhousing_initial)
+CAhousing_test = testing(CAhousing_initial)
+```
+
+``` {r include=FALSE}
+########## Tree with averages
+forest1 = randomForest(medianHouseValue ~ medianIncome + households + averagerooms + averagebedrooms +  averagetenants,
+                       na.action = na.omit,
+                       data=CAhousing_train)
+rfmean = rmse(forest1, CAhousing_test)
+
+########## Tree with total
+forest2 = randomForest(medianHouseValue ~ medianIncome + households + totalRooms + totalBedrooms +  population,
+                       na.action = na.omit,
+                       data=CAhousing_train)
+rftotal = rmse(forest2, CAhousing_test)
+
+########## Boosted with averages
+boost1 = gbm(medianHouseValue ~ medianIncome + households + averagerooms + averagebedrooms +  averagetenants, 
+             data = CAhousing_train,
+             interaction.depth=4, n.trees=500, shrinkage=.05)
+gbm.perf(boost1)
+boostmean = rmse(boost1, CAhousing_test)
+
+########## Boosted with total
+boost2 = gbm(medianHouseValue ~ medianIncome + households + totalRooms + totalBedrooms +  population, 
+             data = CAhousing_train,
+             interaction.depth=4, n.trees=500, shrinkage=.05)
+gbm.perf(boost2)
+boosttotal = rmse(boost2, CAhousing_test)
+```
+
+```{r include=FALSE}
+########## regressions predictions with average
+lm2 = lm(medianHouseValue ~ medianIncome + households + averagerooms + averagebedrooms +  averagetenants, data=CAhousing_train)
+lm3 = lm(medianHouseValue ~ (medianIncome + households + averagerooms + averagebedrooms +  averagetenants)^2, data=CAhousing_train)
+medmean = rmse(lm2, CAhousing_test)
+largemean = rmse(lm3, CAhousing_test)
+
+
+########## regressions predictions with totals
+lm4 = lm(medianHouseValue ~ medianIncome + households + totalRooms + totalBedrooms +  population, data=CAhousing_train)
+lm5 = lm(medianHouseValue ~ (medianIncome + households + totalRooms + totalBedrooms +  population)^2, data=CAhousing_train)
+medtotal = rmse(lm4, CAhousing_test)
+largetotal = rmse(lm5, CAhousing_test)
+```
+  
+  
+When we were creating a predictive model, we first thought about what variables to include in the model, whether we wanted to use them all or not. In addition to that we had to decided whether to use average or total values for some of the variables, given that rooms, people and bedrooms were given for the total of the area, so we decided that we wanted to check if it was more relevant to use a total or an average per household in the same area. To do so, we conducted the same medium and large regressions, as well as random forests and gradient-boosted forests to check for the smallest RMSE.  
+  
+```{r echo=FALSE}
+######### Table of RMSEs
+
+tab <- matrix(c(rfmean, rftotal, boostmean, boosttotal, medmean, medtotal, largemean, largetotal), ncol=1, byrow=TRUE)
+colnames(tab) <- c("RMSE")
+rownames(tab) <- c("RandomForest - Mean", "RandomForest - Total", "Boosted - Mean", "Boosted - Total", "Medium - Mean", "Medium - Total", "Large - Mean", "Large - Total")
+tab <- as.table(tab)
+
+kable(tab, align="lr", caption="Table with prediction model's RMSE")
+```
+  
+The results of the table showed us that the lowest RMSE was from the gradient-boosted forest with the average of some of the variables. So we use it to predict the median house value of the houses in California and we subtracted those predictions from the actual values to get the errors of the model.  
+  
+```{r include=FALSE}
+########## chose best after comparing
+boost3 = gbm(medianHouseValue ~ medianIncome + households + averagerooms + averagebedrooms +  averagetenants, 
+             data = CAhousing,
+             interaction.depth=4, n.trees=500, shrinkage=.05)
+test = predict(boost3, CAhousing)
+
+CAhousing = CAhousing %>%
+  mutate(prediction1 = test,
+         residuals1 =  medianHouseValue - prediction1)
+```
+
+```{r echo=FALSE}
+################## Plots
+ggmap(CA) +
+geom_point(data = CAhousing, mapping = aes(x = longitude, y = latitude, color = medianHouseValue))
+```
+  
+In this graph, we see the actual median house value for different areas of California.  
+  
+```{r echo=FALSE}
+ggmap(CA) +
+geom_point(data = CAhousing, mapping = aes(x = longitude, y = latitude, color = prediction1))
+```
+  
+This graph shows the predictions of median house values made by our gradient-boosted forest model for houses across different areas of California.  
+  
+```{r echo=FALSE}
+ggmap(CA) +
+geom_point(data = CAhousing, mapping = aes(x = longitude, y = latitude, color = residuals1))
+```
+  
+This last graph is the errors of our predictive model, in each area of California, it shows how close to the actual value our prediction was.   
+
+
