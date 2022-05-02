@@ -437,14 +437,14 @@ so when we graph it, we decided to maintain only rules that double the
 chance of purchasing the second item when the first was already on the
 basket.
 
-<img src="/Users/pepe/Desktop/Data-Mining/ECO395-Group/homework-4/figure3/figureq3.png" width="2000" />
+<img src="HM4_files/figure-markdown_strict/figureq3.png" width="2000" />
 
 In this graph we see that there are less rules that double the purchase
 probability. We can see some meaninful relation between yougurt and
 berries. But we also see some weird relations, as whipped cream and
 other vegetables.
 
-<img src="/Users/pepe/Desktop/Data-Mining/ECO395-Group/homework-4/figure3/figureq3a.png" width="1996" />
+<img src="HM4_files/figure-markdown_strict/figureq3a.png" width="1996" />
 
 To see some relations better, we decided to check two nodes, which were
 “other vegetables” and “root vegetables”. We can see that “other
@@ -454,7 +454,7 @@ to many different products varying from all clusters. One can argue that
 dataset and that they have increased probability of being purchased in
 relation to a phetora of items.
 
-<img src="/Users/pepe/Desktop/Data-Mining/ECO395-Group/homework-4/figure3/figureq3b.png" width="2012" />
+<img src="HM4_files/figure-markdown_strict/figureq3b.png" width="2012" />
 
 As for the “root vegetables”, we see the relation whithin it’s own
 cluster, but we see some relation with other clusters, but not as many

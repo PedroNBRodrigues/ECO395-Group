@@ -311,19 +311,19 @@ This dataset was composed of the basket of goods of 9835 customers. To create th
 
 
 ```{r echo=FALSE}
-knitr::include_graphics("/Users/pepe/Desktop/Data-Mining/ECO395-Group/homework-4/figure3/figureq3.png")
+knitr::include_graphics("HM4_files/figure-markdown_strict/figureq3.png")
 ```
   
 In this graph we see that there are less rules that double the purchase probability. We can see some meaninful relation between yougurt and berries. But we also see some weird relations, as whipped cream and other vegetables.  
   
 ```{r echo=FALSE}
-knitr::include_graphics("/Users/pepe/Desktop/Data-Mining/ECO395-Group/homework-4/figure3/figureq3a.png")
+knitr::include_graphics("HM4_files/figure-markdown_strict/figureq3a.png")
 ```
   
 To see some relations better, we decided to check two nodes, which were "other vegetables" and "root vegetables". We can see that "other vegetables" not only relate to other products of their cluster, but also to many different products varying from all clusters. One can argue that "other vegetables" are purchased by majority of the customers in our dataset and that they have increased probability of being purchased in relation to a phetora of items.  
   
 ```{r echo=FALSE}
-knitr::include_graphics("/Users/pepe/Desktop/Data-Mining/ECO395-Group/homework-4/figure3/figureq3b.png")
+knitr::include_graphics("HM4_files/figure-markdown_strict/figureq3b.png")
 ```
   
 As for the "root vegetables", we see the relation whithin it's own cluster, but we see some relation with other clusters, but not as many as the previous node. We can see in this node one problem from this dataset, which is that it separates some items into multiple categories. "Onions" are an item classified in the "other vegetable", but they are also "root vegetables", so we would expect them to be closely related. Using this network, a supermarket has two options, it can keep related items located closely to each other, so that the customer will acquire both, or knowing that some have high purchase relation, it can keep them apart, which will make the customer transite through the store for longer and possible purchase other items with smaller confidence.  
