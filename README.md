@@ -1,2 +1,2 @@
 # ECO395-Group
-Sean Pierce and Pedro Rodrigues
+Sean Pierce, Pedro Rodrigues, and Ahmed Almezail
